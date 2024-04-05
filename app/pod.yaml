@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-llm
+  namespace: default
+spec:
+  containers:
+  - name: test-llm
+    image: <your-image>:latest
+    args:
+    - python
+    - "app.py"
+    - "--project-id=<your-project-id>"
+    - "--location=<your-location>"
+    - "--endpoint=<your-model-endpoint>"
+    ports:
+    - containerPort: 7860 # Or the port on which your web app listens
+  serviceAccountName: test-llm-k8s-sa
+  nodeSelector:
+    iam.gke.io/gke-metadata-server-enabled: "true"
