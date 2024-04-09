@@ -79,16 +79,7 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --role="roles/logging.logWriter"
 ```
 
-8. Add permission to impersonate the sa (iam.serviceAccounts.actAs)
-
-```shell
-gcloud iam service-accounts add-iam-policy-binding \
-    test-llm@${PROJECT_ID}.iam.gserviceaccount.com \
-    --member="user:${EMAIL}" \
-    --role="roles/iam.serviceAccountUser"
-```
-
-9. Authorize the GKE SA
+8. Authorize the GKE SA
 
 ```shell
 gcloud iam service-accounts add-iam-policy-binding test-llm@${PROJECT_ID}.iam.gserviceaccount.com \
