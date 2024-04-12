@@ -90,7 +90,7 @@ gcloud iam service-accounts add-iam-policy-binding $GCP_SA \
 
 kubectl annotate serviceaccount prediction-app-k8s-sa \
     --namespace default \
-    iam.gke.io/gcp-service-account=${GCP_SA}
+    iam.gke.io/gcp-service-account=$GCP_SA
 ```
 
 ### Build
