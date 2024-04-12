@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import config
 import argparse
 
 from google.cloud import aiplatform
@@ -40,6 +39,7 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+EXAMPLES = ["how do I use virtual reality in fitness?"]
 
 
 client = google.cloud.logging.Client(project=args.project_id)
@@ -69,6 +69,6 @@ demo = gr.Interface(
     inputs=[gr.Textbox(label="Input", lines=6)],
     outputs=[gr.Textbox(label="Output", lines=6)],
     title="Prediction From Custom Trained Model",
-    examples=config.EXAMPLES,
+    examples=EXAMPLES,
 )
 demo.launch(share=False, server_port=7860, server_name="0.0.0.0")
