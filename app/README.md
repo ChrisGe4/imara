@@ -26,20 +26,16 @@ export PROJECT_ID=<YOUR_PROJECT_ID>
 export REGION=<YOUR_GCP_REGION_NAME>
 ```
 
-3. Set up the cluster(optional)
+3. Set up the cluster 
 
 ```shell
 gcloud container clusters create demo-gke-cluster --zone $REGION --num-nodes 1 --project $PROJECT_ID
 
 gcloud container clusters get-credentials demo-gke-cluster --zone $REGION --project $PROJECT_ID
-```
 
-4. Enable Workload Identity Federation(optional if the GKE Autopilot cluster is used).
+export PROJECT_NUMBER=`gcloud projects describe $PROJECT_ID --format="value(projectNumber)"`
 
-Note that, for GKE Autopilot clusters Workload Identity Federation is already enabled by default.
-
-```shell
-
+# Enable Workload Identity Federation. Note that, for GKE Autopilot clusters Workload Identity Federation is already enabled by default.
 gcloud container clusters update demo-gke-cluster \
     --zone=$REGION \
     --workload-pool=$PROJECT_ID.svc.id.goog
@@ -50,47 +46,22 @@ gcloud container node-pools update default-pool \
     --workload-metadata=GKE_METADATA
 ```
 
-5. Create service account
+4. Create and Authorize a Kubernetes ServiceAccount
 
-```bash
-export GCP_SA=prediction-app-sa@$PROJECT_ID.iam.gserviceaccount.com
-
-gcloud iam service-accounts create prediction-app-sa \
-    --description="Service account to test custom trained models" \
-    --display-name="prediction-app-sa"
-    
+```shell
 kubectl create serviceaccount prediction-app-k8s-sa
 
-```
+# Add `aiplatform.user` role    
+gcloud projects add-iam-policy-binding projects/$PROJECT_ID \
+    --role=roles/aiplatform.user \
+    --member=principal://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$PROJECT_ID.svc.id.goog/subject/ns/default/sa/prediction-app-k8s-sa \
+    --condition=None    
 
-6. Add `aiplatform.user` role
-
-```bash
-
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:$GCP_SA" \
-    --role="roles/aiplatform.user"
-```
-
-7. Add `logging.logWriter` role
-
-```shell
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:$GCP_SA" \
-    --role="roles/logging.logWriter"
-```
-
-8. Authorize the GKE SA
-
-```shell
-gcloud iam service-accounts add-iam-policy-binding $GCP_SA \
-    --role roles/iam.workloadIdentityUser \
-    --member "serviceAccount:$PROJECT_ID.svc.id.goog[default/prediction-app-k8s-sa]"
-
-kubectl annotate serviceaccount prediction-app-k8s-sa \
-    --namespace default \
-    iam.gke.io/gcp-service-account=$GCP_SA
+# Add `logging.logWriter` role
+gcloud projects add-iam-policy-binding projects/$PROJECT_ID \
+    --role=roles/logging.logWriter \
+    --member=principal://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$PROJECT_ID.svc.id.goog/subject/ns/default/sa/prediction-app-k8s-sa \
+    --condition=None    
 ```
 
 ### Build
@@ -138,14 +109,14 @@ metadata:
 spec:
   containers:
   - name: prediction-app
-    image: $APP_IMAGE:latest
+    image: ${APP_IMAGE}:latest
     imagePullPolicy: Always
     args:
     - python
     - "app.py"
-    - "--project-id=$PROJECT_ID"
-    - "--location=$REGION"
-    - "--endpoint=$MODEL_ENDPOINT"
+    - "--project-id=${PROJECT_ID}"
+    - "--location=${REGION}"
+    - "--endpoint=${MODEL_ENDPOINT}"
     ports:
     - containerPort: 7860 # Or the port on which your web app listens
   serviceAccountName: prediction-app-k8s-sa
